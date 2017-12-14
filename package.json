@@ -43,6 +43,7 @@
     "testEnvironment": "node"
   },
   "dependencies": {
+    "amqplib": "^0.5.2",
     "async": "^2.5.0",
     "bcrypt-nodejs": "^0.0.3",
     "body-parser": "^1.18.2",
@@ -67,6 +68,7 @@
     "request": "^2.83.0"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.5.5",
     "@types/async": "^2.0.40",
     "@types/bcrypt-nodejs": "0.0.30",
     "@types/body-parser": "^1.16.2",
