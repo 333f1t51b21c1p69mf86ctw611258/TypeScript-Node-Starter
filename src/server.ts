@@ -15,9 +15,9 @@ import * as flash from "express-flash";
 import * as path from "path";
 import * as mongoose from "mongoose";
 import * as passport from "passport";
-import * as amqp from "amqplib/callback_api";
 
 import { Database } from "./data/Database";
+import { Amqp } from "./amqp/Amqp";
 
 const MongoStore = mongo(session);
 
@@ -25,7 +25,6 @@ const MongoStore = mongo(session);
  * Load environment variables from .env file, where API keys and passwords are configured.
  */
 dotenv.config({ path: ".env.example" });
-
 
 /**
  * Controllers (route handlers).
@@ -45,9 +44,6 @@ import * as passportConfig from "./config/passport";
  */
 const app = express();
 
-const test = new Database();
-test.initsync();
-
 /**
  * Connect to MongoDB.
  */
@@ -59,8 +55,6 @@ mongoose.connection.on("error", () => {
   console.log("MongoDB connection error. Please make sure MongoDB is running.");
   process.exit();
 });
-
-
 
 /**
  * Express configuration.
@@ -149,118 +143,23 @@ app.get("/auth/facebook/callback", passport.authenticate("facebook", { failureRe
 app.use(errorHandler());
 
 /**
+ * 
+ */
+const database = new Database();
+database.initsync();
+
+/**
+ * 
+ */
+const amqp = new Amqp();
+amqp.testRabbitMQ();
+
+/**
  * Start Express server.
  */
 app.listen(app.get("port"), () => {
   console.log(("  App is running at http://localhost:%d in %s mode"), app.get("port"), app.get("env"));
   console.log("  Press CTRL-C to stop\n");
-});
-
-
-
-const msg = "Hello World";
-const second = {
-  name: "test"
-};
-
-// // test promise api
-// amqp.connect("amqp://localhost")
-//   .then(connection => {
-//     return connection.createChannel()
-//       .tap(channel => channel.checkQueue("myQueue"))
-//       .then(channel => {
-//         console.log("###### send to queue");
-//         channel.sendToQueue("myQueue", new Buffer(msg));
-//       })
-//       .finally(() => connection.close());
-//   });
-
-// amqp.connect("amqp://localhost")
-//   .then(connection => {
-//     return connection.createChannel()
-//       .tap(channel => channel.checkQueue("myQueue"))
-//       .then(channel => {
-//         return channel.consume("myQueue", newMsg => {
-//           if (newMsg != undefined) {
-//             console.log("test");
-
-//             // test promise api properties
-//             if (newMsg.properties.contentType === "application/json") {
-//               console.log("New Message: " + newMsg.content.toString());
-//             }
-//           }
-//         });
-//       })
-//       .finally(() => connection.close());
-//   });
-
-amqp.connect("amqp://localhost", (err, connection) => {
-  if (!err) {
-    connection.createChannel((err, channel) => {
-      if (!err) {
-        channel.assertQueue("myQueue", {}, (err, ok) => {
-          if (!err) {
-            console.log("****************** send the message");
-            channel.sendToQueue("myQueue", new Buffer(JSON.stringify(second)));
-          }
-        });
-      }
-    });
-  }
-});
-
-let count = 0;
-amqp.connect("amqp://localhost", (err, connection) => {
-  if (!err) {
-    connection.createChannel((err, channel) => {
-      if (!err) {
-        channel.assertQueue("myQueue", {}, (err, ok) => {
-          if (!err) {
-            channel.consume("myQueue", newMsg => {
-              if (newMsg != undefined) {
-                if (++count % 2 == 0) {
-                  channel.ack(newMsg);
-                }
-                console.log("comsume new record " + count + ": " + JSON.parse(newMsg.content.toString()).name);
-                //
-                // test callback api properties
-                if (newMsg.properties.contentType === "application/json") {
-                  console.log("New Message: " + newMsg.content.toString());
-                }
-              }
-            });
-          }
-        });
-      }
-    });
-  }
-});
-
-amqp.connect("amqp://localhost", (err, connection) => {
-  if (!err) {
-    connection.createChannel((err, channel) => {
-      if (!err) {
-        channel.assertQueue("myQueue", {}, (err, ok) => {
-          if (!err) {
-            channel.consume("myQueue", newMsg => {
-              if (newMsg != undefined) {
-                // channel.ack(newMsg);
-                if (++count % 2 == 0) {
-                  channel.ack(newMsg);
-                }
-                console.log("comsume new record " + count + ": " + JSON.parse(newMsg.content.toString()).name);
-                //
-                // test callback api properties
-                if (newMsg.properties.contentType === "application/json") {
-                  console.log("New Message: " + newMsg.content.toString());
-                }
-              }
-            });
-          }
-        });
-      }
-    });
-  }
 });
 
 module.exports = app;
