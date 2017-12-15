@@ -17,6 +17,8 @@ import * as mongoose from "mongoose";
 import * as passport from "passport";
 import * as amqp from "amqplib/callback_api";
 
+import { Database } from "./data/Database";
+
 const MongoStore = mongo(session);
 
 /**
@@ -43,6 +45,9 @@ import * as passportConfig from "./config/passport";
  */
 const app = express();
 
+const test = new Database();
+test.initsync();
+
 /**
  * Connect to MongoDB.
  */
@@ -60,7 +65,7 @@ mongoose.connection.on("error", () => {
 /**
  * Express configuration.
  */
-app.set("port", process.env.PORT || 3000);
+app.set("port", process.env.PORT || 8668);
 app.set("views", path.join(__dirname, "../views"));
 app.set("view engine", "pug");
 app.use(compression());
